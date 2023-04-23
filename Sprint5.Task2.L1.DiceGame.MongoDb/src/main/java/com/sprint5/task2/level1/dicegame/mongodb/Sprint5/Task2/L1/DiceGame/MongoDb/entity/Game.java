@@ -8,7 +8,5 @@ public class Game {
     @Id
     private String id;
     private int points;
-    //private String resultGame;
     private Result result;
-
 }

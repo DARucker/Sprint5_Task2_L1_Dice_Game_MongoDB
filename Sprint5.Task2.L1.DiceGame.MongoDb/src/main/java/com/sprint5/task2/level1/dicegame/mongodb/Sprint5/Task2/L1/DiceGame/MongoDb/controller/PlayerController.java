@@ -2,6 +2,7 @@ package com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.Mong
 
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.PlayerToSave;
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.Playerdto;
+import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.Ranking;
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.service.IPlayerServiceMongo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RequestMapping("/player")
-@Tag(name = "Spring 5 - Task 2 - Dice Game", description = "")
+@Tag(name = "Spring 5 - Task 2 - Dice Game with Mongodb", description = "")
 @RestController
 public class PlayerController {
 
@@ -99,15 +100,80 @@ public class PlayerController {
             Playerdto playerdto = playerServiceMongo.findById(id);
             return ResponseEntity.ok(playerdto);
         } catch (ResponseStatusException e) {
-            Map<String, Object> error = new HashMap<>();
             return new ResponseEntity<Map<String,Object>>(this.message(e), HttpStatus.NOT_FOUND);
         }
     }
-
     //     public ResponseEntity<?> findAllRanking()
-    //     public ResponseEntity<?> worstPlayer(){
-    //     public ResponseEntity<?> bestPlayer(){
 
+    /**
+     * **  GET /players/: returns the list of all the players in the system
+     *   with its average percentage of successes..
+     */
+
+    @Operation(summary= "List of results of all players", description = "returns the list of all the players in the system\n" +
+            "  with its average success rate.")
+    @ApiResponse(responseCode = "200", description = "List of results of all players", content = {@Content(mediaType = "application/json",
+            schema = @Schema(implementation = Ranking.class))})
+    @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
+    @GetMapping("/players/")
+    public ResponseEntity<?> findAllRanking() {
+        return ResponseEntity.ok(playerServiceMongo.listAllRanking());
+    }
+
+/**
+ * GET /players/ranking: devuelve el ranking medio de todos los jugadores/as del sistema. Es decir, el porcentaje medio de logros.
+ */
+
+    @Operation(summary= "Average of players rankings", description = "Returns the average success rate of all players")
+    @ApiResponse(responseCode = "200", description = "Average", content = @Content)
+    @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
+    @GetMapping("/players/ranking")
+    public ResponseEntity<Integer> rankgingAvg(){
+        return ResponseEntity.ok(playerServiceMongo.rankingAvg());
+    }
+
+
+
+
+
+
+
+    /**
+     *  GET /players/ranking/loser: Returns the player with the lowest success rate.
+     */
+    @Operation(summary= "Player with the worst ranking", description = "Returns the player with the lowest success rate")
+    @ApiResponse(responseCode = "200", description = "Player id and games results", content = {@Content(mediaType = "application/json",
+            schema = @Schema(implementation = Ranking.class))})
+    @ApiResponse(responseCode = "204", description = "No content. There are no games saved in the database", content = @Content)
+    @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
+    @GetMapping("/ranking/looser")
+    public ResponseEntity<?> worstPlayer(){
+        Ranking worstPlayer;
+        try {
+            worstPlayer = playerServiceMongo.worstPlayer();
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<Map<String,Object>>(this.message(e), HttpStatus.NO_CONTENT);
+        }
+        return ResponseEntity.ok(worstPlayer);
+    }
+    /**
+     * GET /players/ranking/winenr: Returns the player with the lowest success rate.
+     */
+    @Operation(summary= "Player with the best ranking", description = "Returns the player with the highest success rate")
+    @ApiResponse(responseCode = "200", description = "Player id and games results", content = {@Content(mediaType = "application/json",
+            schema = @Schema(implementation = Ranking.class))})
+    @ApiResponse(responseCode = "204", description = "No content. There are no games saved in the database", content = @Content)
+    @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
+    @GetMapping("ranking/winner")
+    public ResponseEntity<?> bestPlayer(){
+        Ranking bestPlayer;
+        try {
+            bestPlayer = playerServiceMongo.bestPlayer();
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<Map<String,Object>>(this.message(e), HttpStatus.NO_CONTENT);
+        }
+        return ResponseEntity.ok(bestPlayer);
+    }
 
     /**
      * GAMES

@@ -1,6 +1,7 @@
 package com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.service;
 
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.PlayerToSave;
+import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.Ranking;
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.entity.Game;
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.entity.Player;
 import com.sprint5.task2.level1.dicegame.mongodb.Sprint5.Task2.L1.DiceGame.MongoDb.dto.Playerdto;
@@ -17,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
 
 @Service
 public class PlayerServiceImpl implements IPlayerServiceMongo {
@@ -99,11 +102,80 @@ public class PlayerServiceImpl implements IPlayerServiceMongo {
         return entityToDto(playerDb.get());
         }
 
+    /**
+     * **  GET /players/: devuelve el listado de todos los jugadores/as
+     * del sistema con su porcentaje medio de éxitos.
+     */
 
+    @Override
+    public List<Ranking> listAllRanking(){
+        List<Ranking> allRanking = new ArrayList<>();
+        List<Player> playerList = playerRepoMongo.findAll();
+        for (Player player : playerList){
+            String playerId = player.getId();
+            String name = player.getName();
+            if(name.equals("")){
+                name="Anonymous";
+            }
+            List<Game> gamesPlayer = player.getGames();
+            int win = (int) gamesPlayer.stream().filter(x -> x.getResult().equals(Result.WIN)).count();
+            int played = gamesPlayer.size();
+            double calcularRatio = 0;
+            if(win>0){calcularRatio =  (double) win /played*100;}
+            int ratio = (int) calcularRatio;
+            Ranking ranking = new Ranking(playerId, name, win, played, ratio);
+            allRanking.add(ranking);
+            log.info("ranking "+ ranking);
+        }
+        return allRanking;
+    }
 
+    /**
+     * GET /players/ranking: devuelve el ranking medio de todos los jugadores/as del sistema. Es decir, el porcentaje medio de logros.
+     */
+    @Override
+    public int rankingAvg(){
+        List<Ranking> rankings = listAllRanking();
+        int gamesWon = rankings.stream().mapToInt(x -> x.getWin()).sum();
+        int gamesPlayed  = rankings.stream().mapToInt(x -> x.getPlayed()).sum();
+        double calcularRatio = 0;
+        if(gamesWon>0){
+            calcularRatio =  (double) gamesWon /gamesPlayed *100;
+        }
+        return (int) calcularRatio;
+    }
 
+    /**
+     *     GET /players/ranking/loser: devuelve al jugador/a con peor porcentaje de éxito.
+     */
+    @Override
+    public Ranking worstPlayer(){
+        List<Ranking> worstRankings = listAllRanking().stream()
+                .filter(x -> x.getPlayed()>0)
+                .sorted(Comparator.comparingInt(Ranking::getRatio))
+                .limit(1)
+                .collect(Collectors.toList());
+        if(worstRankings.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No games were stored");
+        }
+        return worstRankings.get(0);
+    }
 
-
+    /**
+     *     GET /players/ranking/winer: devuelve al jugador/a con mejor porcentaje de éxito.
+     */
+    @Override
+    public Ranking bestPlayer(){
+        List<Ranking> bestRankings = listAllRanking()
+                .stream()
+                .sorted(Comparator.comparingInt(Ranking::getRatio).reversed())
+                .limit(1)
+                .collect(Collectors.toList());
+        if(bestRankings.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No games were stored");
+        }
+        return bestRankings.get(0);
+    }
 
     @Override
     public Playerdto playGame(String id){
