@@ -49,3 +49,4 @@ Change everything you need and use MongoDB to persist the data.
 - Phase 3
 Add security: include JWT authentication in all accesses to the URL's of the microservice.
 
+![image](https://user-images.githubusercontent.com/86018020/233841448-ffb4d4fb-b4c4-4cee-abda-ab36983d0ee2.png)
